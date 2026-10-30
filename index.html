@@ -1233,8 +1233,180 @@
             }
 
             function RoleModal({ role, catalog, me, notify, onClose, onSaved }) {
-                // TODO: checkbox quyền theo nhóm
-                return null;
+                const isNew = !role;
+                const isSystem = !!role?.isSystem;
+                const [form, setForm] = useState({
+                    code: "",
+                    name: role?.name || "",
+                    description: role?.description || "",
+                });
+                const [perms, setPerms] = useState(role?.permissions || []);
+                const [errors, setErrors] = useState({});
+                const [saving, setSaving] = useState(false);
+                const set = (field) => (e) =>
+                    setForm({ ...form, [field]: e.target.value });
+                const togglePerm = (code) =>
+                    setPerms(
+                        perms.includes(code)
+                            ? perms.filter((p) => p !== code)
+                            : [...perms, code],
+                    );
+                // Nhóm danh mục quyền theo resource: { users: [...], roles: [...], permissions: [...] }
+                const groups = catalog.reduce(
+                    (acc, p) => ({
+                        ...acc,
+                        [p.resource]: [...(acc[p.resource] || []), p],
+                    }),
+                    {},
+                );
+                const validate = () => {
+                    const e = {};
+                    if (isNew && !/^[a-z][a-z0-9-]{2,49}$/.test(form.code.trim()))
+                        e.code =
+                            "Mã gồm 3–50 ký tự a-z, 0-9, dấu gạch ngang, bắt đầu bằng chữ cái";
+                    if (form.name.trim().length < 2)
+                        e.name = "Tên phải có ít nhất 2 ký tự";
+                    setErrors(e);
+                    return Object.keys(e).length === 0;
+                };
+                const handleSubmit = async () => {
+                    if (!validate()) return;
+                    const clean = {
+                        name: form.name.trim(),
+                        description: form.description.trim(),
+                    };
+                    setSaving(true);
+                    try {
+                        if (isNew) {
+                            await api.post("/roles", {
+                                code: form.code.trim(),
+                                ...clean,
+                                permissions: perms,
+                            });
+                        } else {
+                            // PATCH nếu tên/mô tả đổi, rồi PUT permissions nếu bộ quyền đổi
+                            const changedInfo = Object.fromEntries(
+                                Object.entries(clean).filter(
+                                    ([k, v]) => v !== (role[k] ?? ""),
+                                ),
+                            );
+                            if (Object.keys(changedInfo).length)
+                                await api.patch(`/roles/${role.id}`, changedInfo);
+                            const changed =
+                                perms.length !== role.permissions.length ||
+                                perms.some((p) => !role.permissions.includes(p));
+                            if (!isSystem && changed)
+                                await api.put(`/roles/${role.id}/permissions`, {
+                                    permissions: perms,
+                                });
+                        }
+                        notify(
+                            "success",
+                            isNew
+                                ? "Tạo vai trò thành công."
+                                : "Cập nhật vai trò thành công.",
+                        );
+                        onSaved();
+                    } catch (err) {
+                        // 400: lỗi theo từng trường; 409: mã vai trò trùng
+                        const fieldErrors = {};
+                        err.details.forEach((d) => {
+                            if (d.field) fieldErrors[d.field] = d.message;
+                        });
+                        if (err.code === "ROLE_CODE_EXISTS")
+                            fieldErrors.code = err.message;
+                        setErrors(fieldErrors);
+                        if (!Object.keys(fieldErrors).length)
+                            notify("error", err.message);
+                    } finally {
+                        setSaving(false);
+                    }
+                };
+                const field = (name, label) => (
+                    <div>
+                        <label>{label}</label>
+                        <input value={form[name]} onChange={set(name)} />
+                        {errors[name] && <p className="error">{errors[name]}</p>}
+                    </div>
+                );
+                return (
+                    <div className="modal-overlay" onClick={onClose}>
+                        <div
+                            className="modal-content"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h3>
+                                {isNew ? "Thêm vai trò" : `Sửa vai trò: ${role.code}`}
+                            </h3>
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    handleSubmit();
+                                }}
+                            >
+                                {isNew && field("code", "Mã vai trò *")}
+                                {field("name", "Tên vai trò *")}
+                                {field("description", "Mô tả")}
+                                <label>Quyền</label>
+                                {isSystem && (
+                                    <p className="muted">
+                                        Vai trò hệ thống: không thể thay đổi bộ quyền.
+                                    </p>
+                                )}
+                                {catalog.length === 0 && (
+                                    <p className="muted">
+                                        Bạn không có quyền xem danh mục quyền.
+                                    </p>
+                                )}
+                                {Object.entries(groups).map(([resource, list]) => (
+                                    <div key={resource}>
+                                        <b>{resource}</b>
+                                        {list.map((p) => {
+                                            const notMine = !me.permissions.includes(
+                                                p.code,
+                                            );
+                                            return (
+                                                <label key={p.code} className="check">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={perms.includes(p.code)}
+                                                        disabled={isSystem || notMine}
+                                                        onChange={() =>
+                                                            togglePerm(p.code)
+                                                        }
+                                                    />
+                                                    <span>
+                                                        {p.code}{" "}
+                                                        <span className="muted">
+                                                            — {p.description}
+                                                            {notMine &&
+                                                                " (bạn không có quyền này)"}
+                                                        </span>
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                ))}
+                                {errors.permissions && (
+                                    <p className="error">{errors.permissions}</p>
+                                )}
+                                <div className="modal-actions">
+                                    <button
+                                        type="submit"
+                                        className="primary"
+                                        disabled={saving}
+                                    >
+                                        {saving ? "Đang lưu…" : "Lưu"}
+                                    </button>
+                                    <button type="button" onClick={onClose}>
+                                        Hủy
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                );
             }
 
             function MyProfile({ me }) {
