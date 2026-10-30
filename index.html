@@ -1089,11 +1089,150 @@
 
             // 3.10. RolesPage, RoleModal, MyProfile
             function RolesPage({ me, notify, reloadMe }) {
-                // TODO
-                return null;
+                const [roles, setRoles] = useState([]);
+                const [catalog, setCatalog] = useState([]);
+                const [editing, setEditing] = useState(undefined); // undefined: đóng, null: thêm mới, object: sửa
+                const handleError = useCallback(
+                    (err) => {
+                        notify("error", err.message);
+                        if (err.status === 403) reloadMe();
+                    },
+                    [notify, reloadMe],
+                );
+                const fetchRoles = useCallback(async () => {
+                    try {
+                        const { data } = await api.get("/roles", {
+                            params: { limit: 100 },
+                        });
+                        setRoles(data.data);
+                    } catch (err) {
+                        handleError(err);
+                    }
+                }, [handleError]);
+                // Tải song song danh sách vai trò và danh mục quyền
+                useEffect(() => {
+                    (async () => {
+                        try {
+                            const [rolesRes, permsRes] = await Promise.all([
+                                api.get("/roles", { params: { limit: 100 } }),
+                                can(me, "permissions:read")
+                                    ? api.get("/permissions")
+                                    : null,
+                            ]);
+                            setRoles(rolesRes.data.data);
+                            if (permsRes) setCatalog(permsRes.data.data);
+                        } catch (err) {
+                            handleError(err);
+                        }
+                    })();
+                }, [me, handleError]);
+                const deleteRole = async (role) => {
+                    if (!window.confirm(`Bạn có chắc muốn xóa vai trò "${role.name}"?`))
+                        return;
+                    try {
+                        await api.delete(`/roles/${role.id}`);
+                        notify("success", `Đã xóa vai trò "${role.name}".`);
+                    } catch (err) {
+                        handleError(err); // 409: vai trò đang dùng / vai trò hệ thống
+                    }
+                    fetchRoles();
+                };
+                return (
+                    <div>
+                        <div className="toolbar">
+                            {can(me, "roles:create") && (
+                                <button
+                                    className="primary"
+                                    onClick={() => setEditing(null)}
+                                >
+                                    + Thêm vai trò
+                                </button>
+                            )}
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Mã</th>
+                                    <th>Tên</th>
+                                    <th>Quyền</th>
+                                    <th>Người dùng</th>
+                                    <th>Loại</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {roles.length === 0 && (
+                                    <tr>
+                                        <td colSpan="6">Không có vai trò nào.</td>
+                                    </tr>
+                                )}
+                                {roles.map((r) => (
+                                    <tr key={r.id}>
+                                        <td>{r.code}</td>
+                                        <td>
+                                            <b>{r.name}</b>
+                                            {r.description && (
+                                                <div className="muted">
+                                                    {r.description}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {r.permissions.map((p) => (
+                                                <span key={p} className="badge">
+                                                    {p}
+                                                </span>
+                                            ))}
+                                        </td>
+                                        <td>{r.userCount}</td>
+                                        <td>
+                                            {r.isSystem ? (
+                                                <span className="badge system">
+                                                    Hệ thống
+                                                </span>
+                                            ) : (
+                                                <span className="badge">Tùy chỉnh</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {can(me, "roles:update") && (
+                                                <button onClick={() => setEditing(r)}>
+                                                    Sửa
+                                                </button>
+                                            )}
+                                            {can(me, "roles:delete") &&
+                                                !r.isSystem && (
+                                                    <button
+                                                        className="danger"
+                                                        onClick={() => deleteRole(r)}
+                                                    >
+                                                        Xóa
+                                                    </button>
+                                                )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {editing !== undefined && (
+                            <RoleModal
+                                role={editing}
+                                catalog={catalog}
+                                me={me}
+                                notify={notify}
+                                onClose={() => setEditing(undefined)}
+                                onSaved={() => {
+                                    setEditing(undefined);
+                                    fetchRoles();
+                                    reloadMe(); // quyền của chính mình có thể vừa thay đổi
+                                }}
+                            />
+                        )}
+                    </div>
+                );
             }
 
-            function RoleModal({ role, catalog, notify, onClose, onSaved }) {
+            function RoleModal({ role, catalog, me, notify, onClose, onSaved }) {
                 // TODO: checkbox quyền theo nhóm
                 return null;
             }
