@@ -376,11 +376,7 @@
                                 {current === "me" && <MyProfile me={me} />}
                             </>
                         )}
-                        {toast && (
-                            <div className={`toast ${toast.type}`}>
-                                {toast.text}
-                            </div>
-                        )}
+                        <Toast toast={toast} />
                     </div>
                 );
             }
@@ -1108,8 +1104,12 @@
             }
 
             function Toast({ toast }) {
-                // TODO
-                return null;
+                if (!toast) return null;
+                return (
+                    <div className={`toast ${toast.type}`} role="status">
+                        {toast.text}
+                    </div>
+                );
             }
 
             // 3.11. App Render
