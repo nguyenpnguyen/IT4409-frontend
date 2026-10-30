@@ -507,7 +507,18 @@
                     setPage(1);
                 };
                 const toggleLock = async (user) => {
-                    // TODO: PATCH /users/:id { status: "locked" | "active" }, thông báo,
+                    const next = user.status === "locked" ? "active" : "locked";
+                    try {
+                        await api.patch(`/users/${user.id}`, { status: next });
+                        notify(
+                            "success",
+                            next === "locked"
+                                ? `Đã khóa "${user.fullName}".`
+                                : `Đã mở khóa "${user.fullName}".`,
+                        );
+                    } catch (err) {
+                        handleError(err);
+                    }
                     fetchUsers();
                 };
                 const deleteUser = async (user) => {
@@ -517,13 +528,51 @@
                         )
                     )
                         return;
-                    // TODO: DELETE /users/:id (204, không có body), thông báo, fetchUsers()
+                    try {
+                        await api.delete(`/users/${user.id}`);
+                        notify("success", `Đã xóa "${user.fullName}".`);
+                    } catch (err) {
+                        handleError(err);
+                    }
+                    fetchUsers();
                 };
                 return (
                     <div>
                         <div className="toolbar">
                             <SearchBar onSearch={changeFilter(setSearch)} />
-                            {/* TODO: select trạng thái, select vai trò (khi có roles:read), nút Thêm (khi có users:create) */}
+                            <select
+                                value={status}
+                                onChange={(e) =>
+                                    changeFilter(setStatus)(e.target.value)
+                                }
+                            >
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="active">Hoạt động</option>
+                                <option value="locked">Đã khóa</option>
+                            </select>
+                            {can(me, "roles:read") && (
+                                <select
+                                    value={roleId}
+                                    onChange={(e) =>
+                                        changeFilter(setRoleId)(e.target.value)
+                                    }
+                                >
+                                    <option value="">Tất cả vai trò</option>
+                                    {roles.map((r) => (
+                                        <option key={r.id} value={r.id}>
+                                            {r.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                            {can(me, "users:create") && (
+                                <button
+                                    className="primary"
+                                    onClick={() => setEditing(null)}
+                                >
+                                    + Thêm người dùng
+                                </button>
+                            )}
                         </div>
                         <UserTable
                             users={users}
