@@ -798,13 +798,35 @@
                     roleIds: [],
                 });
                 const [errors, setErrors] = useState({});
+                const [saving, setSaving] = useState(false);
+                const set = (field) => (e) =>
+                    setForm({ ...form, [field]: e.target.value });
+                const toggleRole = (id) =>
+                    setForm({
+                        ...form,
+                        roleIds: form.roleIds.includes(id)
+                            ? form.roleIds.filter((x) => x !== id)
+                            : [...form.roleIds, id],
+                    });
                 const validate = () => {
                     const e = {};
                     if (!/^\S+@\S+\.\S+$/.test(form.email.trim()))
                         e.email = "Email không hợp lệ";
                     if (form.fullName.trim().length < 2)
                         e.fullName = "Họ tên phải có ít nhất 2 ký tự";
-                    // TODO: phone (nếu có) dạng +84..., password (khi thêm mới) đủ mạnh
+                    if (
+                        form.phone.trim() &&
+                        !/^\+[1-9]\d{7,14}$/.test(form.phone.trim())
+                    )
+                        e.phone = "Số điện thoại phải có dạng +84912345678";
+                    if (
+                        isNew &&
+                        !/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(
+                            form.password,
+                        )
+                    )
+                        e.password =
+                            "Mật khẩu tối thiểu 8 ký tự, có chữ hoa, chữ số và ký tự đặc biệt";
                     setErrors(e);
                     return Object.keys(e).length === 0;
                 };
@@ -815,9 +837,12 @@
                         fullName: form.fullName.trim(),
                         phone: form.phone.trim() || null,
                     };
+                    setSaving(true);
                     try {
                         if (isNew) {
-                            // TODO: POST /users với clean + password (+ roleIds nếu có chọn)
+                            const body = { ...clean, password: form.password };
+                            if (form.roleIds.length) body.roleIds = form.roleIds;
+                            await api.post("/users", body);
                         } else {
                             // PATCH: chỉ gửi trường thay đổi
                             const changed = Object.fromEntries(
@@ -846,12 +871,100 @@
                         setErrors(fieldErrors);
                         if (!Object.keys(fieldErrors).length)
                             notify("error", err.message);
+                    } finally {
+                        setSaving(false);
                     }
                 };
-                // TODO: render modal theo wireframe 4.4
-                // - ô Mật khẩu chỉ khi isNew
-                // - checkbox vai trò chỉ khi isNew && can(me, "roles:assign");
-                // disabled khi role.permissions có quyền mà me.permissions không có
+                const field = (name, label, type = "text") => (
+                    <div>
+                        <label>{label}</label>
+                        <input
+                            type={type}
+                            value={form[name]}
+                            onChange={set(name)}
+                        />
+                        {errors[name] && (
+                            <p className="error">{errors[name]}</p>
+                        )}
+                    </div>
+                );
+                return (
+                    <div className="modal-overlay" onClick={onClose}>
+                        <div
+                            className="modal-content"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h3>
+                                {isNew ? "Thêm người dùng" : "Sửa người dùng"}
+                            </h3>
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    handleSubmit();
+                                }}
+                            >
+                                {field("email", "Email *", "email")}
+                                {field("fullName", "Họ tên *")}
+                                {field("phone", "Số điện thoại")}
+                                {isNew &&
+                                    field("password", "Mật khẩu *", "password")}
+                                {isNew && can(me, "roles:assign") && (
+                                    <div>
+                                        <label>Vai trò</label>
+                                        {roles.map((r) => {
+                                            const id = String(r.id);
+                                            const missing = r.permissions.some(
+                                                (p) =>
+                                                    !me.permissions.includes(p),
+                                            );
+                                            return (
+                                                <label key={id} className="check">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={form.roleIds.includes(
+                                                            id,
+                                                        )}
+                                                        disabled={missing}
+                                                        onChange={() =>
+                                                            toggleRole(id)
+                                                        }
+                                                    />
+                                                    <span>
+                                                        {r.name}
+                                                        {missing && (
+                                                            <span className="muted">
+                                                                {" "}
+                                                                — vượt quyền của
+                                                                bạn
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                        {errors.roleIds && (
+                                            <p className="error">
+                                                {errors.roleIds}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                                <div className="modal-actions">
+                                    <button
+                                        type="submit"
+                                        className="primary"
+                                        disabled={saving}
+                                    >
+                                        {saving ? "Đang lưu…" : "Lưu"}
+                                    </button>
+                                    <button type="button" onClick={onClose}>
+                                        Hủy
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                );
             }
 
             // 3.9. RoleAssignModal
