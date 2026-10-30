@@ -22,7 +22,6 @@
                 margin: 20px auto;
                 padding: 20px;
                 background: white;
-                border-radius: 6px;
             }
             h1 {
                 font-size: 22px;
@@ -61,7 +60,6 @@
                 padding: 6px;
                 margin-top: 4px;
                 border: 1px solid gray;
-                border-radius: 4px;
                 box-sizing: border-box;
             }
             .toolbar input,
@@ -79,7 +77,6 @@
                 padding: 6px 12px;
                 margin-right: 4px;
                 border: 1px solid gray;
-                border-radius: 4px;
                 background: white;
                 cursor: pointer;
             }
@@ -107,7 +104,6 @@
             .modal-content {
                 background: white;
                 padding: 16px;
-                border-radius: 6px;
                 width: 400px;
                 max-height: 90vh;
                 overflow-y: auto;
@@ -149,7 +145,6 @@
                 display: inline-block;
                 padding: 2px 8px;
                 margin: 2px;
-                border-radius: 10px;
                 font-size: 12px;
                 background: royalblue;
                 color: white;
@@ -190,7 +185,6 @@
                 right: 16px;
                 bottom: 16px;
                 padding: 12px 16px;
-                border-radius: 6px;
                 color: white;
                 max-width: 360px;
             }
@@ -208,10 +202,7 @@
         <script type="text/babel">
             // 3.3. Axios instance và interceptor
             const { useState, useEffect, useCallback, useRef } = React;
-            // const API_BASE = "http://localhost:3001/api/v1";
             const API_BASE = "https://it4409-backend-acpt.onrender.com/api/v1";
-            // Làm Frontend trước với mock server của giảng viên:
-            // const API_BASE = "<MOCK_URL>/good/api/v1";
             const TOKEN_KEY = "rbac_token";
             const getToken = () => sessionStorage.getItem(TOKEN_KEY);
             const setToken = (t) =>
@@ -832,7 +823,8 @@
                     try {
                         if (isNew) {
                             const body = { ...clean, password: form.password };
-                            if (form.roleIds.length) body.roleIds = form.roleIds;
+                            if (form.roleIds.length)
+                                body.roleIds = form.roleIds;
                             await api.post("/users", body);
                         } else {
                             // PATCH: chỉ gửi trường thay đổi
@@ -909,7 +901,10 @@
                                                     !me.permissions.includes(p),
                                             );
                                             return (
-                                                <label key={id} className="check">
+                                                <label
+                                                    key={id}
+                                                    className="check"
+                                                >
                                                     <input
                                                         type="checkbox"
                                                         checked={form.roleIds.includes(
@@ -925,7 +920,7 @@
                                                         {missing && (
                                                             <span className="muted">
                                                                 {" "}
-                                                                — vượt quyền của
+                                                                - vượt quyền của
                                                                 bạn
                                                             </span>
                                                         )}
@@ -1054,13 +1049,13 @@
                                             {missing.length > 0 && (
                                                 <span className="muted">
                                                     {" "}
-                                                    — vượt quyền của bạn
+                                                    - vượt quyền của bạn
                                                 </span>
                                             )}
                                             {lockedSelf && (
                                                 <span className="muted">
                                                     {" "}
-                                                    — không thể tự gỡ
+                                                    - không thể tự gỡ
                                                 </span>
                                             )}
                                         </span>
@@ -1122,7 +1117,11 @@
                     })();
                 }, [me, handleError]);
                 const deleteRole = async (role) => {
-                    if (!window.confirm(`Bạn có chắc muốn xóa vai trò "${role.name}"?`))
+                    if (
+                        !window.confirm(
+                            `Bạn có chắc muốn xóa vai trò "${role.name}"?`,
+                        )
+                    )
                         return;
                     try {
                         await api.delete(`/roles/${role.id}`);
@@ -1158,7 +1157,9 @@
                             <tbody>
                                 {roles.length === 0 && (
                                     <tr>
-                                        <td colSpan="6">Không có vai trò nào.</td>
+                                        <td colSpan="6">
+                                            Không có vai trò nào.
+                                        </td>
                                     </tr>
                                 )}
                                 {roles.map((r) => (
@@ -1186,12 +1187,18 @@
                                                     Hệ thống
                                                 </span>
                                             ) : (
-                                                <span className="badge">Tùy chỉnh</span>
+                                                <span className="badge">
+                                                    Tùy chỉnh
+                                                </span>
                                             )}
                                         </td>
                                         <td>
                                             {can(me, "roles:update") && (
-                                                <button onClick={() => setEditing(r)}>
+                                                <button
+                                                    onClick={() =>
+                                                        setEditing(r)
+                                                    }
+                                                >
                                                     Sửa
                                                 </button>
                                             )}
@@ -1199,7 +1206,9 @@
                                                 !r.isSystem && (
                                                     <button
                                                         className="danger"
-                                                        onClick={() => deleteRole(r)}
+                                                        onClick={() =>
+                                                            deleteRole(r)
+                                                        }
                                                     >
                                                         Xóa
                                                     </button>
@@ -1227,7 +1236,14 @@
                 );
             }
 
-            function RoleModal({ role, catalog, me, notify, onClose, onSaved }) {
+            function RoleModal({
+                role,
+                catalog,
+                me,
+                notify,
+                onClose,
+                onSaved,
+            }) {
                 const isNew = !role;
                 const isSystem = !!role?.isSystem;
                 const [form, setForm] = useState({
@@ -1256,7 +1272,10 @@
                 );
                 const validate = () => {
                     const e = {};
-                    if (isNew && !/^[a-z][a-z0-9-]{2,49}$/.test(form.code.trim()))
+                    if (
+                        isNew &&
+                        !/^[a-z][a-z0-9-]{2,49}$/.test(form.code.trim())
+                    )
                         e.code =
                             "Mã gồm 3–50 ký tự a-z, 0-9, dấu gạch ngang, bắt đầu bằng chữ cái";
                     if (form.name.trim().length < 2)
@@ -1286,10 +1305,15 @@
                                 ),
                             );
                             if (Object.keys(changedInfo).length)
-                                await api.patch(`/roles/${role.id}`, changedInfo);
+                                await api.patch(
+                                    `/roles/${role.id}`,
+                                    changedInfo,
+                                );
                             const changed =
                                 perms.length !== role.permissions.length ||
-                                perms.some((p) => !role.permissions.includes(p));
+                                perms.some(
+                                    (p) => !role.permissions.includes(p),
+                                );
                             if (!isSystem && changed)
                                 await api.put(`/roles/${role.id}/permissions`, {
                                     permissions: perms,
@@ -1321,7 +1345,9 @@
                     <div>
                         <label>{label}</label>
                         <input value={form[name]} onChange={set(name)} />
-                        {errors[name] && <p className="error">{errors[name]}</p>}
+                        {errors[name] && (
+                            <p className="error">{errors[name]}</p>
+                        )}
                     </div>
                 );
                 return (
@@ -1331,7 +1357,9 @@
                             onClick={(e) => e.stopPropagation()}
                         >
                             <h3>
-                                {isNew ? "Thêm vai trò" : `Sửa vai trò: ${role.code}`}
+                                {isNew
+                                    ? "Thêm vai trò"
+                                    : `Sửa vai trò: ${role.code}`}
                             </h3>
                             <form
                                 onSubmit={(e) => {
@@ -1345,7 +1373,8 @@
                                 <label>Quyền</label>
                                 {isSystem && (
                                     <p className="muted">
-                                        Vai trò hệ thống: không thể thay đổi bộ quyền.
+                                        Vai trò hệ thống: không thể thay đổi bộ
+                                        quyền.
                                     </p>
                                 )}
                                 {catalog.length === 0 && (
@@ -1353,38 +1382,54 @@
                                         Bạn không có quyền xem danh mục quyền.
                                     </p>
                                 )}
-                                {Object.entries(groups).map(([resource, list]) => (
-                                    <div key={resource}>
-                                        <b>{resource}</b>
-                                        {list.map((p) => {
-                                            const notMine = !me.permissions.includes(
-                                                p.code,
-                                            );
-                                            return (
-                                                <label key={p.code} className="check">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={perms.includes(p.code)}
-                                                        disabled={isSystem || notMine}
-                                                        onChange={() =>
-                                                            togglePerm(p.code)
-                                                        }
-                                                    />
-                                                    <span>
-                                                        {p.code}{" "}
-                                                        <span className="muted">
-                                                            — {p.description}
-                                                            {notMine &&
-                                                                " (bạn không có quyền này)"}
+                                {Object.entries(groups).map(
+                                    ([resource, list]) => (
+                                        <div key={resource}>
+                                            <b>{resource}</b>
+                                            {list.map((p) => {
+                                                const notMine =
+                                                    !me.permissions.includes(
+                                                        p.code,
+                                                    );
+                                                return (
+                                                    <label
+                                                        key={p.code}
+                                                        className="check"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={perms.includes(
+                                                                p.code,
+                                                            )}
+                                                            disabled={
+                                                                isSystem ||
+                                                                notMine
+                                                            }
+                                                            onChange={() =>
+                                                                togglePerm(
+                                                                    p.code,
+                                                                )
+                                                            }
+                                                        />
+                                                        <span>
+                                                            {p.code}{" "}
+                                                            <span className="muted">
+                                                                -{" "}
+                                                                {p.description}
+                                                                {notMine &&
+                                                                    " (bạn không có quyền này)"}
+                                                            </span>
                                                         </span>
-                                                    </span>
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                ))}
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    ),
+                                )}
                                 {errors.permissions && (
-                                    <p className="error">{errors.permissions}</p>
+                                    <p className="error">
+                                        {errors.permissions}
+                                    </p>
                                 )}
                                 <div className="modal-actions">
                                     <button
@@ -1420,18 +1465,21 @@
                                 </tr>
                                 <tr>
                                     <th>Số điện thoại</th>
-                                    <td>{me.phone || "—"}</td>
+                                    <td>{me.phone || "-"}</td>
                                 </tr>
                                 <tr>
                                     <th>Vai trò</th>
                                     <td>
                                         {me.roles.length
                                             ? me.roles.map((r) => (
-                                                  <span key={r.id} className="badge">
+                                                  <span
+                                                      key={r.id}
+                                                      className="badge"
+                                                  >
                                                       {r.name}
                                                   </span>
                                               ))
-                                            : "—"}
+                                            : "-"}
                                     </td>
                                 </tr>
                                 <tr>
@@ -1439,7 +1487,10 @@
                                     <td>
                                         {me.permissions.length
                                             ? me.permissions.map((p) => (
-                                                  <span key={p} className="badge">
+                                                  <span
+                                                      key={p}
+                                                      className="badge"
+                                                  >
                                                       {p}
                                                   </span>
                                               ))
