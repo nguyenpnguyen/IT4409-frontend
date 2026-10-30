@@ -11,18 +11,17 @@
         <!-- Axios CDN -->
         <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
         <style>
-            /* ===== CSS chung (tái sử dụng từ Ex3) ===== */
             body {
                 font-family: Arial, sans-serif;
-                background: #f5f5f5;
+                background: lightgray;
                 margin: 0;
-                color: #333;
+                color: black;
             }
             .container {
                 max-width: 1000px;
                 margin: 20px auto;
                 padding: 20px;
-                background: #fff;
+                background: white;
                 border-radius: 6px;
             }
             h1 {
@@ -41,15 +40,12 @@
             }
             th,
             td {
-                border: 1px solid #ddd;
+                border: 1px solid lightgray;
                 padding: 8px;
                 text-align: left;
             }
             th {
-                background: #f0f0f0;
-            }
-            tr:nth-child(even) {
-                background: #fafafa;
+                background: lightgray;
             }
 
             /* Form nhập liệu */
@@ -64,7 +60,7 @@
                 width: 100%;
                 padding: 6px;
                 margin-top: 4px;
-                border: 1px solid #ccc;
+                border: 1px solid gray;
                 border-radius: 4px;
                 box-sizing: border-box;
             }
@@ -82,9 +78,9 @@
             button {
                 padding: 6px 12px;
                 margin-right: 4px;
-                border: 1px solid #ccc;
+                border: 1px solid gray;
                 border-radius: 4px;
-                background: #fff;
+                background: white;
                 cursor: pointer;
             }
 
@@ -109,7 +105,7 @@
             }
             /* Modal Content */
             .modal-content {
-                background: #fff;
+                background: white;
                 padding: 16px;
                 border-radius: 6px;
                 width: 400px;
@@ -121,7 +117,6 @@
                 text-align: right;
             }
 
-            /* ===== Bổ sung cho Ex3 Fullstack RBAC (mục 3.11) ===== */
             .header {
                 display: flex;
                 justify-content: space-between;
@@ -131,18 +126,18 @@
                 margin-bottom: 16px;
             }
             .muted {
-                color: #666;
+                color: gray;
                 font-size: 14px;
             }
             .tabs {
                 display: flex;
                 gap: 4px;
-                border-bottom: 2px solid #eee;
+                border-bottom: 2px solid lightgray;
                 margin-bottom: 16px;
             }
             .tabs button.active {
-                background: #4caf50;
-                color: #fff;
+                background: green;
+                color: white;
             }
             .toolbar {
                 display: flex;
@@ -156,28 +151,28 @@
                 margin: 2px;
                 border-radius: 10px;
                 font-size: 12px;
-                background: #e3f2fd;
-                color: #1565c0;
+                background: royalblue;
+                color: white;
             }
             .badge.locked {
-                background: #ffebee;
-                color: #c62828;
+                background: red;
+                color: white;
             }
             .badge.active {
-                background: #e8f5e9;
-                color: #2e7d32;
+                background: green;
+                color: white;
             }
             .badge.system {
-                background: #fff3e0;
-                color: #e65100;
+                background: orange;
+                color: black;
             }
             button.primary {
-                background: #4caf50;
-                color: #fff;
+                background: green;
+                color: white;
             }
             button.danger {
-                background: #e53935;
-                color: #fff;
+                background: red;
+                color: white;
             }
             button:disabled {
                 opacity: 0.5;
@@ -196,14 +191,14 @@
                 bottom: 16px;
                 padding: 12px 16px;
                 border-radius: 6px;
-                color: #fff;
+                color: white;
                 max-width: 360px;
             }
             .toast.success {
-                background: #2e7d32;
+                background: green;
             }
             .toast.error {
-                background: #c62828;
+                background: red;
             }
         </style>
     </head>
@@ -211,7 +206,6 @@
         <div id="root"></div>
 
         <script type="text/babel">
-            // TODO: api, components
             // 3.3. Axios instance và interceptor
             const { useState, useEffect, useCallback, useRef } = React;
             const API_BASE = "http://localhost:3001/api/v1";
@@ -1410,8 +1404,51 @@
             }
 
             function MyProfile({ me }) {
-                // TODO
-                return null;
+                return (
+                    <div>
+                        <h2>Hồ sơ của tôi</h2>
+                        <table>
+                            <tbody>
+                                <tr>
+                                    <th>Họ tên</th>
+                                    <td>{me.fullName}</td>
+                                </tr>
+                                <tr>
+                                    <th>Email</th>
+                                    <td>{me.email}</td>
+                                </tr>
+                                <tr>
+                                    <th>Số điện thoại</th>
+                                    <td>{me.phone || "—"}</td>
+                                </tr>
+                                <tr>
+                                    <th>Vai trò</th>
+                                    <td>
+                                        {me.roles.length
+                                            ? me.roles.map((r) => (
+                                                  <span key={r.id} className="badge">
+                                                      {r.name}
+                                                  </span>
+                                              ))
+                                            : "—"}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Quyền hiệu lực</th>
+                                    <td>
+                                        {me.permissions.length
+                                            ? me.permissions.map((p) => (
+                                                  <span key={p} className="badge">
+                                                      {p}
+                                                  </span>
+                                              ))
+                                            : "Không có quyền nào"}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                );
             }
 
             function Toast({ toast }) {
