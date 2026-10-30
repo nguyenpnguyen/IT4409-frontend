@@ -635,8 +635,41 @@
             }
 
             function Pagination({ meta, limit, onPageChange, onLimitChange }) {
-                // TODO
-                return null;
+                return (
+                    <div className="toolbar">
+                        <span>
+                            Hiển thị:{" "}
+                            <select
+                                value={limit}
+                                onChange={(e) =>
+                                    onLimitChange(Number(e.target.value))
+                                }
+                            >
+                                {[5, 10, 20].map((n) => (
+                                    <option key={n} value={n}>
+                                        {n}
+                                    </option>
+                                ))}
+                            </select>{" "}
+                            dòng/trang · Tổng {meta.totalItems}
+                        </span>
+                        <button
+                            disabled={meta.page <= 1}
+                            onClick={() => onPageChange(meta.page - 1)}
+                        >
+                            Prev
+                        </button>
+                        <span>
+                            Trang {meta.page}/{meta.totalPages}
+                        </span>
+                        <button
+                            disabled={meta.page >= meta.totalPages}
+                            onClick={() => onPageChange(meta.page + 1)}
+                        >
+                            Next
+                        </button>
+                    </div>
+                );
             }
 
             // 3.7. UserTable
